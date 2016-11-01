@@ -11,7 +11,62 @@ namespace BlackBarLabs.Persistence
 {
     public class RollbackAsync<TSuccess, TFailure>
     {
-        public Func<Action<TSuccess>, Action<TFailure>, Task<Func<Task>>> [] Tasks;
+        public sealed class RollbackResult
+        {
+            public TFailure FailureResult { get; private set; }
+
+            public TSuccess SuccessResult { get; private set; }
+
+            public bool IsFailure { get; private set; }
+
+            private Func<Task> rollback = default(Func<Task>);
+
+            private RollbackResult()
+            {
+
+            }
+
+            internal static RollbackResult Success(TSuccess successResult, Func<Task> rollback)
+            {
+                return new RollbackResult()
+                {
+                    rollback = rollback,
+                    SuccessResult = successResult,
+                    IsFailure = false,
+                };
+            }
+
+            internal static RollbackResult Failure(TFailure failureResult)
+            {
+                return new RollbackResult()
+                {
+                    rollback = default(Func<Task>),
+                    FailureResult = failureResult,
+                    IsFailure = true,
+                };
+            }
+
+            internal Task Rollback()
+            {
+                if (default(Func<Task>) != rollback)
+                    return rollback();
+                return true.ToTask();
+            }
+        }
+
+        public delegate Task<RollbackResult> RollbackTaskDelegate(Func<TSuccess, Func<Task>, RollbackResult> success, Func<TFailure, RollbackResult> failure);
+
+        public RollbackAsync()
+        {
+            this.Tasks = new List<RollbackTaskDelegate>();
+        }
+        
+        public List<RollbackTaskDelegate> Tasks;
+
+        public void AddTask(RollbackTaskDelegate task)
+        {
+            this.Tasks.Add(task);
+        }
 
         public async Task<TResult> ExecuteAsync<TResult>(
             Func<TSuccess[], TResult> success,
@@ -20,39 +75,35 @@ namespace BlackBarLabs.Persistence
             var results = await Tasks
                 .Select(async task =>
                 {
-                    var result = false;
-                    var successResult = default(TSuccess);
-                    var failureResult = default(TFailure);
-                    var rollback = await task.Invoke(
-                        (successResultReturned) =>
+                    var rollbackResult = await task.Invoke(
+                        (successResultReturned, rollback) =>
                         {
-                            successResult = successResultReturned;
-                            result = true;
+                            return RollbackResult.Success(successResultReturned, rollback);
+                            //{
+                            //    success = successResultReturned,
+                            //    failure = failureResult,
+                            //    result = result,
+                            //    rollback = rollback,
+                            //};
                         },
                         (failureResultReturned) =>
                         {
-                            failureResult = failureResultReturned;
+                            return RollbackResult.Failure(failureResultReturned);
                         });
-                    return new
-                    {
-                        success = successResult,
-                        failure = failureResult,
-                        result = result,
-                        rollback = rollback,
-                    };
+                    return rollbackResult;
                 })
                 .WhenAllAsync();
 
             var resultGlobal = await results.FirstOrDefault(
-                result => !result.result,
+                result => result.IsFailure,
                 async (failedResult) =>
                 {
-                    await results.Select(result => result.rollback()).WhenAllAsync();
-                    return failed(failedResult.failure);
+                    await results.Select(result => result.Rollback()).WhenAllAsync();
+                    return failed(failedResult.FailureResult);
                 },
                 async () =>
                 {
-                    var successes = results.Select(result => result.success).ToArray();
+                    var successes = results.Select(result => result.SuccessResult).ToArray();
                     return await success(successes).ToTask();
                 });
             return resultGlobal;
