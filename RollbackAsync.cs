@@ -1,10 +1,8 @@
-﻿using BlackBarLabs.Collections.Generic;
-using BlackBarLabs.Core;
-using BlackBarLabs.Core.Extensions;
+﻿using BlackBarLabs.Extensions;
+using BlackBarLabs.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BlackBarLabs.Persistence
