@@ -101,7 +101,7 @@ namespace BlackBarLabs.Persistence
         {
             public TFailure FailureResult { get; private set; }
 
-            public TSuccess SuccessResult { get; private set; }
+            internal TSuccess SuccessResult { get; set; }
 
             public bool IsFailure { get; private set; }
 
