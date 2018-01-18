@@ -1,9 +1,9 @@
 ﻿using BlackBarLabs.Extensions;
-using BlackBarLabs.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EastFive.Linq;
 
 namespace BlackBarLabs.Persistence
 {
