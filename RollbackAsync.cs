@@ -13,7 +13,6 @@ namespace BlackBarLabs.Persistence
         {
             public TFailure FailureResult { get; private set; }
             
-
             public bool IsFailure { get; private set; }
 
             private Func<Task> rollback = default(Func<Task>);

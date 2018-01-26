@@ -64,11 +64,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CreateRecordFailedException.cs" />
-    <Compile Include="DuplicateRecordException.cs" />
-    <Compile Include="NoRecordException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ResourceAlreadyExistsException.cs" />
     <Compile Include="RollbackAsync.cs" />
   </ItemGroup>
   <ItemGroup>
